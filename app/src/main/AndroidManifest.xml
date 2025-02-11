@@ -1,30 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.myshop">
 
-    <!-- Permissions -->
+    <!-- Internet Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    
+    <!-- Location Permissions -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    
+    <!-- Notification Permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".MyshopApplication"
         android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Myshop"
-        tools:targetApi="31">
+        android:theme="@style/Theme.Myshop">
 
-        <!-- Main Activity -->
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/google_maps_key" />
+
+        <!-- Firebase Cloud Messaging -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_color" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/order_status_notification_channel_id" />
+
+        <!-- Auth Activity -->
         <activity
-            android:name=".ui.activities.MainActivity"
+            android:name=".ui.activities.AuthActivity"
             android:exported="true"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.Myshop.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,32 +51,25 @@
             </intent-filter>
         </activity>
 
-        <!-- Auth Activity -->
+        <!-- Main Activity -->
         <activity
-            android:name=".ui.activities.AuthActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Myshop.NoActionBar"
-            android:windowSoftInputMode="adjustResize" />
+            android:name=".ui.activities.MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.Myshop">
+            <!-- Deep link for order notifications -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="myshop.example.com"
+                    android:pathPrefix="/order"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
 
-        <!-- Product Detail Activity -->
-        <activity
-            android:name=".ui.activities.ProductDetailActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Myshop.NoActionBar" />
-
-        <!-- Cart Activity -->
-        <activity
-            android:name=".ui.activities.CartActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Myshop.NoActionBar" />
-
-        <!-- Checkout Activity -->
-        <activity
-            android:name=".ui.activities.CheckoutActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Myshop.NoActionBar" />
-
-        <!-- Firebase Messaging Service -->
+        <!-- Firebase Cloud Messaging Service -->
         <service
             android:name=".services.MyFirebaseMessagingService"
             android:exported="false">
@@ -66,13 +78,16 @@
             </intent-filter>
         </service>
 
-        <!-- Firebase Service -->
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_notification" />
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_color"
-            android:resource="@color/primary" />
+        <!-- File Provider for Image Capture -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 </manifest>

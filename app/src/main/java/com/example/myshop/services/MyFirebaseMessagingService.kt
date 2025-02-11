@@ -10,51 +10,77 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.myshop.R
 import com.example.myshop.ui.activities.MainActivity
+import com.example.myshop.utils.Constants
+import com.example.myshop.utils.FirebaseHelper
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+        // Save the new token to Firestore for the current user
+        val currentUser = FirebaseHelper.getInstance().getCurrentUser()
+        if (currentUser != null) {
+            FirebaseHelper.getInstance().updateFCMToken(currentUser.uid, token)
+        }
+    }
+
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        // Check if message contains a notification payload
-        remoteMessage.notification?.let { notification ->
-            sendNotification(notification.title, notification.body)
-        }
-
-        // Check if message contains a data payload
-        if (remoteMessage.data.isNotEmpty()) {
-            handleDataPayload(remoteMessage.data)
+        // Handle notification data
+        remoteMessage.data.let { data ->
+            when (data[Constants.NOTIFICATION_TYPE]) {
+                Constants.NOTIFICATION_TYPE_ORDER_STATUS -> {
+                    handleOrderStatusNotification(
+                        data[Constants.ORDER_ID] ?: "",
+                        data[Constants.ORDER_STATUS] ?: "",
+                        remoteMessage.notification?.title,
+                        remoteMessage.notification?.body
+                    )
+                }
+            }
         }
     }
 
-    override fun onNewToken(token: String) {
-        super.onNewToken(token)
-        // Send token to your server
-        sendRegistrationTokenToServer(token)
-    }
-
-    private fun sendNotification(title: String?, messageBody: String?) {
+    private fun handleOrderStatusNotification(
+        orderId: String,
+        status: String,
+        title: String?,
+        message: String?
+    ) {
+        // Create an intent to open the order details screen
         val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(Constants.EXTRA_ORDER_ID, orderId)
+            putExtra(Constants.EXTRA_NOTIFICATION_TYPE, Constants.NOTIFICATION_TYPE_ORDER_STATUS)
+        }
+
+        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_ONE_SHOT
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            this,
+            0,
+            intent,
+            pendingIntentFlags
         )
 
-        val channelId = getString(R.string.default_notification_channel_id)
+        val channelId = getString(R.string.order_status_notification_channel_id)
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(messageBody)
+            .setContentTitle(title ?: getString(R.string.order_status_update))
+            .setContentText(message ?: getString(R.string.order_status_changed, status))
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
             .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -62,58 +88,30 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                getString(R.string.default_notification_channel_name),
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
+                getString(R.string.order_status_channel_name),
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = getString(R.string.order_status_channel_description)
+                enableLights(true)
+                enableVibration(true)
+            }
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(0, notificationBuilder.build())
-    }
+        // Show notification
+        notificationManager.notify(orderId.hashCode(), notificationBuilder.build())
 
-    private fun handleDataPayload(data: Map<String, String>) {
-        // Handle data payload based on your app's requirements
-        when (data["type"]) {
-            "order_status" -> {
-                val orderId = data["order_id"]
-                val status = data["status"]
-                // Handle order status update
-                updateOrderStatus(orderId, status)
+        // Update local order status if needed
+        FirebaseHelper.getInstance().getOrderById(orderId)
+            .addOnSuccessListener { documentSnapshot ->
+                // Broadcast order update to update UI if the order details screen is open
+                sendBroadcast(Intent(Constants.ACTION_ORDER_UPDATED).apply {
+                    putExtra(Constants.EXTRA_ORDER_ID, orderId)
+                })
             }
-            "new_product" -> {
-                val productId = data["product_id"]
-                // Handle new product notification
-                handleNewProduct(productId)
-            }
-            "promotion" -> {
-                val promoCode = data["promo_code"]
-                val discount = data["discount"]
-                // Handle promotion notification
-                handlePromotion(promoCode, discount)
-            }
-        }
-    }
-
-    private fun sendRegistrationTokenToServer(token: String) {
-        // Send the FCM registration token to your server
-        // This could be used to target specific devices for notifications
-    }
-
-    private fun updateOrderStatus(orderId: String?, status: String?) {
-        // Update local order status and notify UI if needed
-    }
-
-    private fun handleNewProduct(productId: String?) {
-        // Handle new product notification
-        // Maybe update local cache or notify UI
-    }
-
-    private fun handlePromotion(promoCode: String?, discount: String?) {
-        // Handle promotion notification
-        // Maybe store promotion details locally or show special notification
     }
 
     companion object {
-        private const val TAG = "MyFirebaseMsgService"
+        private const val TAG = "FCMService"
     }
 }

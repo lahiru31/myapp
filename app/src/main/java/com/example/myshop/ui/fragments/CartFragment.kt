@@ -86,14 +86,11 @@ class CartFragment : Fragment() {
             return
         }
 
-        // In a real app, you would load cart items from Firebase
-        // For now, we'll simulate loading some items
-        firebaseHelper.getUserProfile(currentUser.uid)
-            .addOnSuccessListener { user ->
-                // Simulate loading cart items
-                cartItems = mutableListOf(
-                    // Add some sample cart items here
-                )
+        firebaseHelper.getCartItems(currentUser.uid)
+            .addOnSuccessListener { querySnapshot ->
+                cartItems = querySnapshot.documents.mapNotNull { document ->
+                    document.toObject(CartItem::class.java)
+                }.toMutableList()
                 
                 if (cartItems.isEmpty()) {
                     showEmptyCart()
@@ -116,26 +113,42 @@ class CartFragment : Fragment() {
             return
         }
 
-        val index = cartItems.indexOfFirst { it.productId == cartItem.productId }
-        if (index != -1) {
-            cartItems[index].setQuantity(newQuantity)
-            cartAdapter.notifyItemChanged(index)
-            updateTotalPrice()
-        }
+        val currentUser = firebaseHelper.getCurrentUser() ?: return
+        
+        firebaseHelper.updateCartItemQuantity(currentUser.uid, cartItem.productId, newQuantity)
+            .addOnSuccessListener {
+                val index = cartItems.indexOfFirst { it.productId == cartItem.productId }
+                if (index != -1) {
+                    cartItems[index].setQuantity(newQuantity)
+                    cartAdapter.notifyItemChanged(index)
+                    updateTotalPrice()
+                }
+            }
+            .addOnFailureListener { e ->
+                showError("Failed to update quantity")
+            }
     }
 
     private fun removeCartItem(cartItem: CartItem) {
-        val index = cartItems.indexOfFirst { it.productId == cartItem.productId }
-        if (index != -1) {
-            cartItems.removeAt(index)
-            cartAdapter.submitList(cartItems.toList())
-            
-            if (cartItems.isEmpty()) {
-                showEmptyCart()
+        val currentUser = firebaseHelper.getCurrentUser() ?: return
+        
+        firebaseHelper.removeFromCart(currentUser.uid, cartItem.productId)
+            .addOnSuccessListener {
+                val index = cartItems.indexOfFirst { it.productId == cartItem.productId }
+                if (index != -1) {
+                    cartItems.removeAt(index)
+                    cartAdapter.submitList(cartItems.toList())
+                    
+                    if (cartItems.isEmpty()) {
+                        showEmptyCart()
+                    }
+                    
+                    updateTotalPrice()
+                }
             }
-            
-            updateTotalPrice()
-        }
+            .addOnFailureListener { e ->
+                showError("Failed to remove item from cart")
+            }
     }
 
     private fun updateTotalPrice() {
@@ -167,7 +180,22 @@ class CartFragment : Fragment() {
     }
 
     private fun navigateToCheckout() {
-        findNavController().navigate(R.id.action_cart_to_checkout)
+        val currentUser = firebaseHelper.getCurrentUser()
+        if (currentUser == null) {
+            showError("Please sign in to proceed")
+            return
+        }
+        
+        if (cartItems.isEmpty()) {
+            showError("Your cart is empty")
+            return
+        }
+        
+        findNavController().navigate(
+            CartFragmentDirections.actionCartToCheckout(
+                cartItems.toTypedArray()
+            )
+        )
     }
 
     override fun onDestroyView() {

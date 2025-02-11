@@ -156,6 +156,8 @@ class ProductDetailFragment : Fragment() {
             return
         }
 
+        showLoading(true)
+        
         val cartItem = CartItem(
             productId = product.id,
             productName = product.name,
@@ -164,16 +166,21 @@ class ProductDetailFragment : Fragment() {
             quantity = currentQuantity
         )
 
-        // In a real app, you would save this to Firebase
-        // For now, we'll just show a success message
-        val message = if (proceedToCheckout) {
-            findNavController().navigate(R.id.action_product_detail_to_cart)
-            "Item added to cart and proceeding to checkout"
-        } else {
-            "Item added to cart"
-        }
-        
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        firebaseHelper.addToCart(currentUser.uid, cartItem)
+            .addOnSuccessListener {
+                if (proceedToCheckout) {
+                    findNavController().navigate(
+                        ProductDetailFragmentDirections.actionProductDetailToCart()
+                    )
+                } else {
+                    showSuccess("Item added to cart")
+                }
+                showLoading(false)
+            }
+            .addOnFailureListener { e ->
+                showError("Failed to add item to cart")
+                showLoading(false)
+            }
     }
 
     private fun showLoading(isLoading: Boolean) {
@@ -184,6 +191,10 @@ class ProductDetailFragment : Fragment() {
     }
 
     private fun showError(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showSuccess(message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
