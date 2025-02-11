@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude specific preferences that contain sensitive information -->
+    <exclude domain="sharedpref" path="authentication.xml"/>
+    <exclude domain="sharedpref" path="payment_info.xml"/>
+    
+    <!-- Exclude specific database files -->
+    <exclude domain="database" path="user_data.db"/>
+    <exclude domain="database" path="payment_data.db"/>
+    
+    <!-- Exclude specific files -->
+    <exclude domain="file" path="sensitive_info"/>
+    <exclude domain="file" path="temp"/>
+    
+    <!-- Exclude specific external files -->
+    <exclude domain="external" path="temp_images"/>
+    <exclude domain="external" path="cache"/>
+</full-backup-content>

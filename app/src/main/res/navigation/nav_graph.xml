@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.example.myshop.ui.fragments.HomeFragment"
+        android:label="@string/title_home"
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_home_to_product_detail"
+            app:destination="@id/navigation_product_detail" />
+        <action
+            android:id="@+id/action_home_to_category_products"
+            app:destination="@id/navigation_category_products" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_categories"
+        android:name="com.example.myshop.ui.fragments.CategoriesFragment"
+        android:label="@string/title_categories"
+        tools:layout="@layout/fragment_categories">
+        <action
+            android:id="@+id/action_categories_to_category_products"
+            app:destination="@id/navigation_category_products" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_cart"
+        android:name="com.example.myshop.ui.fragments.CartFragment"
+        android:label="@string/title_cart"
+        tools:layout="@layout/fragment_cart">
+        <action
+            android:id="@+id/action_cart_to_checkout"
+            app:destination="@id/navigation_checkout" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.example.myshop.ui.fragments.ProfileFragment"
+        android:label="@string/title_profile"
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_profile_to_orders"
+            app:destination="@id/navigation_orders" />
+        <action
+            android:id="@+id/action_profile_to_addresses"
+            app:destination="@id/navigation_addresses" />
+        <action
+            android:id="@+id/action_profile_to_settings"
+            app:destination="@id/navigation_settings" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_product_detail"
+        android:name="com.example.myshop.ui.fragments.ProductDetailFragment"
+        android:label="Product Details"
+        tools:layout="@layout/fragment_product_detail">
+        <argument
+            android:name="productId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_category_products"
+        android:name="com.example.myshop.ui.fragments.CategoryProductsFragment"
+        tools:layout="@layout/fragment_category_products">
+        <argument
+            android:name="categoryName"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_checkout"
+        android:name="com.example.myshop.ui.fragments.CheckoutFragment"
+        android:label="@string/title_checkout"
+        tools:layout="@layout/fragment_checkout" />
+
+    <fragment
+        android:id="@+id/navigation_orders"
+        android:name="com.example.myshop.ui.fragments.OrdersFragment"
+        android:label="@string/title_my_orders"
+        tools:layout="@layout/fragment_orders" />
+
+    <fragment
+        android:id="@+id/navigation_addresses"
+        android:name="com.example.myshop.ui.fragments.AddressesFragment"
+        android:label="@string/title_addresses"
+        tools:layout="@layout/fragment_addresses" />
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.example.myshop.ui.fragments.SettingsFragment"
+        android:label="@string/title_settings"
+        tools:layout="@layout/fragment_settings" />
+
+    <!-- Admin Panel Destinations -->
+    <fragment
+        android:id="@+id/navigation_admin_panel"
+        android:name="com.example.myshop.ui.fragments.admin.AdminPanelFragment"
+        android:label="@string/title_admin_panel"
+        tools:layout="@layout/fragment_admin_panel">
+        <action
+            android:id="@+id/action_admin_to_add_product"
+            app:destination="@id/navigation_add_product" />
+        <action
+            android:id="@+id/action_admin_to_manage_orders"
+            app:destination="@id/navigation_manage_orders" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_add_product"
+        android:name="com.example.myshop.ui.fragments.admin.AddProductFragment"
+        android:label="Add Product"
+        tools:layout="@layout/fragment_add_product" />
+
+    <fragment
+        android:id="@+id/navigation_manage_orders"
+        android:name="com.example.myshop.ui.fragments.admin.ManageOrdersFragment"
+        android:label="Manage Orders"
+        tools:layout="@layout/fragment_manage_orders" />
+
+</navigation>
